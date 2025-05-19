@@ -1,0 +1,6 @@
+@apiDDKMA_HostAddress = http://localhost:5285
+
+GET {{apiDDKMA_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
