@@ -23,6 +23,11 @@ namespace apiDDKMA.Services
 
         public async Task<CarritoDto> GetUserCartAsync(int userId)
         {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("El ID de usuario no es válido");
+            }
+
             using var connection = GetConnection();
 
             // Obtener el carrito activo
@@ -149,9 +154,13 @@ namespace apiDDKMA.Services
             }
         }
 
-
         public async Task<bool> RemoveFromCartAsync(int userId, int itemId)
         {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("El ID de usuario no es válido");
+            }
+
             using var connection = GetConnection();
             await connection.OpenAsync();
 
@@ -172,6 +181,11 @@ namespace apiDDKMA.Services
 
         public async Task<CarritoItemDto> UpdateCartItemAsync(int userId, int itemId, UpdateCartItemRequest request)
         {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("El ID de usuario no es válido");
+            }
+
             using var connection = GetConnection();
             await connection.OpenAsync();
             try
@@ -231,33 +245,17 @@ namespace apiDDKMA.Services
             }
             catch (Exception ex)
             {
-                // Log del error (mejor usar ILogger en producción)
-                Console.WriteLine($"Error al actualizar ítem: {ex.Message}");
-                throw;
+                throw new Exception($"Error al actualizar ítem: {ex.Message}", ex);
             }
-        }
-
-        private async Task<CarritoItemDto> GetCartItemDtoAsync(int itemId)
-        {
-            using var connection = GetConnection();
-            return await connection.QueryFirstOrDefaultAsync<CarritoItemDto>(
-                @"SELECT 
-            ci.id AS Id, 
-            ci.fk_carrito AS CarritoId,  // Alias cambiado a CarritoId
-            ci.fk_pastel AS PastelId, 
-            p.Nombre AS NombrePastel, 
-            p.Imagen AS ImagenPastel, 
-            ci.cantidad AS Cantidad, 
-            ci.precio_unitario AS PrecioUnitario,
-            (ci.cantidad * ci.precio_unitario) AS Subtotal
-          FROM [carrito_items] ci
-          INNER JOIN [pastel] p ON ci.fk_pastel = p.Id
-          WHERE ci.id = @ItemId",
-                new { ItemId = itemId });
         }
 
         public async Task<bool> ClearCartAsync(int userId)
         {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("El ID de usuario no es válido");
+            }
+
             using var connection = GetConnection();
 
             var affectedRows = await connection.ExecuteAsync(
@@ -268,6 +266,25 @@ namespace apiDDKMA.Services
                 new { UserId = userId });
 
             return affectedRows > 0;
+        }
+
+        private async Task<CarritoItemDto> GetCartItemDtoAsync(int itemId)
+        {
+            using var connection = GetConnection();
+            return await connection.QueryFirstOrDefaultAsync<CarritoItemDto>(
+                @"SELECT 
+            ci.id AS Id, 
+            ci.fk_carrito AS CarritoId,
+            ci.fk_pastel AS PastelId, 
+            p.Nombre AS NombrePastel, 
+            p.Imagen AS ImagenPastel, 
+            ci.cantidad AS Cantidad, 
+            ci.precio_unitario AS PrecioUnitario,
+            (ci.cantidad * ci.precio_unitario) AS Subtotal
+          FROM [carrito_items] ci
+          INNER JOIN [pastel] p ON ci.fk_pastel = p.Id
+          WHERE ci.id = @ItemId",
+                new { ItemId = itemId });
         }
     }
 }
